@@ -26,6 +26,8 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"github.com/arangodb/go-example1/pkg/performance/parallel"
+
 	"github.com/dchest/uniuri"
 	"github.com/spf13/cobra"
 )
@@ -39,21 +41,21 @@ func (c *Command) generate(cmd *cobra.Command, args []string) error {
 	}
 
 	rid := strings.ToLower(uniuri.NewLen(12))
-	exportedKeys := make([]string, c.GenerateInput.Documents)
+	keys := make([]string, c.GenerateInput.Documents)
+	documents := make([]map[string]string, c.GenerateInput.Documents)
 
-	result := c.runBulk(c.Bulk, c.GenerateInput.Documents, func(thread int, ids []int) error {
-		client := cs[thread]
-
-		documents := make([]map[string]string, len(ids))
-
-		for i := 0; i < len(ids); i++ {
-			exportedKeys[ids[i]] = fmt.Sprintf("doc-%s-%d", rid, ids[i])
-			documents[i] = map[string]string{
-				"_key": exportedKeys[ids[i]],
-			}
+	for i := 0; i < len(documents); i++ {
+		key := fmt.Sprintf("doc-%s-%d", rid, i)
+		keys[i] = key
+		documents[i] = map[string]string{
+			"_key": key,
 		}
+	}
 
-		_, err := client.CreateDocuments(ctx, documents)
+	batches := parallel.NewBatches(len(documents), c.Batch)
+
+	result := batches.Run(c.Threads, func(thread int, batch parallel.Batch) error {
+		_, err := cs[thread].CreateDocuments(ctx, documents[batch.Start:batch.End])
 		return err
 	})
 
@@ -63,7 +65,7 @@ func (c *Command) generate(cmd *cobra.Command, args []string) error {
 		return result.Error
 	}
 
-	if err := ioutil.WriteFile(c.GenerateInput.Output, []byte(strings.Join(exportedKeys, "\n")), 0644); err != nil {
+	if err := ioutil.WriteFile(c.GenerateInput.Output, []byte(strings.Join(keys, "\n")), 0644); err != nil {
 		return err
 	}
 
