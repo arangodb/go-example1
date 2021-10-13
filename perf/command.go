@@ -61,7 +61,7 @@ func (c *Command) Init(cmd *cobra.Command) {
 	f.StringVar(&c.Pass, "password", "", "Password")
 	f.StringVar(&c.Database, "database", "benchmark", "Database")
 	f.StringVar(&c.Collection, "collection", "benchmark", "Collection")
-	f.BoolVar(&c.HTTPS, "https", false, "Determine of https is enabled")
+	f.BoolVar(&c.HTTPS, "https", false, "Determine if https is enabled")
 
 	f.IntVar(&c.Threads, "threads", 2, "Number of threads")
 	f.IntVar(&c.Bulk, "bulk", 32, "Bulk size")
