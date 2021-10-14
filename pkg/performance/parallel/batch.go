@@ -18,21 +18,54 @@
 // Copyright holder is ArangoDB GmbH, Cologne, Germany
 //
 
-package main
+package parallel
 
-import (
-	"github.com/arangodb/go-example1/perf"
-	"github.com/spf13/cobra"
-)
+type Batches struct {
+	Batches    []Batch
+	Iterations int
+	BatchSize  int
+}
 
-func main() {
-	cmd := &cobra.Command{}
+type Batch struct {
+	Start, End, ID int
+}
 
-	var c perf.Command
+func (b Batches) AsChannel() <-chan Batch {
+	c := make(chan Batch, len(b.Batches))
 
-	c.Init(cmd)
+	for _, z := range b.Batches {
+		c <- z
+	}
 
-	if err := cmd.Execute(); err != nil {
-		panic(err)
+	close(c)
+
+	return c
+}
+
+func NewBatches(size, batch int) Batches {
+	var b []Batch
+
+	var i = 0
+	var id = 0
+	for i < size {
+		var z Batch
+		z.ID = id
+		z.Start = i
+		if i+batch > size {
+			i = size
+		} else {
+			i += batch
+		}
+		z.End = i
+
+		id++
+
+		b = append(b, z)
+	}
+
+	return Batches{
+		Batches:    b,
+		Iterations: size,
+		BatchSize:  size,
 	}
 }

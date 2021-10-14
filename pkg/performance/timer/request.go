@@ -18,21 +18,27 @@
 // Copyright holder is ArangoDB GmbH, Cologne, Germany
 //
 
-package main
+package timer
 
-import (
-	"github.com/arangodb/go-example1/perf"
-	"github.com/spf13/cobra"
-)
+import "time"
 
-func main() {
-	cmd := &cobra.Command{}
+type Requests []Request
 
-	var c perf.Command
+func (r Requests) Compact() (Times, error) {
+	rs := make(Times, len(r))
 
-	c.Init(cmd)
+	for i := 0; i < len(r); i++ {
+		if r[i].Error != nil {
+			return nil, r[i].Error
+		}
 
-	if err := cmd.Execute(); err != nil {
-		panic(err)
+		rs[i] = r[i].Time
 	}
+
+	return rs, nil
+}
+
+type Request struct {
+	Error error
+	Time  time.Duration
 }

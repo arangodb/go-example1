@@ -18,7 +18,7 @@
 // Copyright holder is ArangoDB GmbH, Cologne, Germany
 //
 
-package perf
+package timer
 
 import (
 	"fmt"
@@ -26,8 +26,8 @@ import (
 	"time"
 )
 
-type RequestResult struct {
-	Times TimeResults
+type Result struct {
+	Times Times
 	Error error
 
 	Duration time.Duration
@@ -36,32 +36,8 @@ type RequestResult struct {
 	Threads  int
 }
 
-type Results []Result
-
-func (r Results) Compact() (TimeResults, error) {
-	rs := make(TimeResults, len(r))
-
-	for i := 0; i < len(r); i++ {
-		if r[i].Error != nil {
-			return nil, r[i].Error
-		}
-
-		rs[i] = r[i].Time
-	}
-
-	return rs, nil
-}
-
-type TimeResults []time.Duration
-
-type Result struct {
-	Error error
-	Time  time.Duration
-}
-
-func (r RequestResult) String() string {
+func (r Result) String() string {
 	var lines []string
-
 	lines = append(lines, fmt.Sprintf("Operation of %d documents on %d threads with bulk size %d:", r.Items, r.Threads, r.Bulk))
 	lines = append(lines, fmt.Sprintf("\tOperation Took: %s", r.Duration.String()))
 	lines = append(lines, fmt.Sprintf("\tOperation Per Document Took: %s", (r.Duration/time.Duration(r.Items)).String()))
